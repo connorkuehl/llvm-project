@@ -52,7 +52,9 @@ static std::vector<std::string> GetFieldNamesFromRecord(const RecordDecl* RD)
     return fields;
 }
 
-TEST(StructureLayoutRandomization, UnmarkedStructuresAreNotRandomized)
+#define RANDSTRUCT_TEST StructureLayoutRandomization
+
+TEST(RANDSTRUCT_TEST, UnmarkedStructuresAreNotRandomized)
 {
     std::string Code =
         R"(
@@ -69,6 +71,28 @@ TEST(StructureLayoutRandomization, UnmarkedStructuresAreNotRandomized)
     const std::vector<std::string> actual = GetFieldNamesFromRecord(RD);
 
     ASSERT_EQ(actual, expected);
+}
+
+TEST(RANDSTRUCT_TEST, StructuresCanBeMarkedWithRandomizeLayoutAttr)
+{
+    std::string Code =
+        R"(
+        struct marked {
+            int bacon;
+            long lettuce;
+        } __attribute__((randomize_layout));
+
+        struct not_marked {
+            double cookies;
+        };
+        )";
+
+    auto AST = MakeAST(Code, Lang_C);
+    auto RD0 = GetRecordDeclFromAST(AST->getASTContext(), "marked");
+    auto RD1 = GetRecordDeclFromAST(AST->getASTContext(), "not_marked");
+
+    ASSERT_TRUE(RD0->getAttr<RandomizeLayoutAttr>());
+    ASSERT_FALSE(RD1->getAttr<RandomizeLayoutAttr>());
 }
 
 // This RUN_ALL_RANDSTRUCT_TESTS conditional compilation can go away once development
