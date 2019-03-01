@@ -4757,3 +4757,12 @@ close the handle. It is also assumed to require an open handle to work with.
   zx_status_t zx_handle_close(zx_handle_t handle [[clang::release_handle]]);
   }];
 }
+
+def ClangRandstructDocs : Documentation {
+  let Category = DocCatVariable;
+  let Heading = "randomize_layout";
+  let Content = [{
+The attribute ``randomize_layout`` can be added to a record-type definition to select
+it for structure layout field randomization; a compile-time hardening technique.
+  }];
+}

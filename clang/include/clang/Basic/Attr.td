@@ -3495,3 +3495,10 @@ def ReleaseHandle : InheritableParamAttr {
   let Subjects = SubjectList<[ParmVar]>;
   let Documentation = [ReleaseHandleDocs];
 }
+
+def RandomizeLayout : InheritableAttr {
+  let Spellings = [GCC<"randomize_layout">, Declspec<"randomize_layout">,
+    Keyword<"randomize_layout">];
+  let Subjects = SubjectList<[Record]>;
+  let Documentation = [ClangRandstructDocs];
+}
