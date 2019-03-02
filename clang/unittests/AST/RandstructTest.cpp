@@ -95,6 +95,28 @@ TEST(RANDSTRUCT_TEST, StructuresCanBeMarkedWithRandomizeLayoutAttr)
     ASSERT_FALSE(RD1->getAttr<RandomizeLayoutAttr>());
 }
 
+TEST(RANDSTRUCT_TEST, StructuresCanBeMarkedWithNoRandomizeLayoutAttr)
+{
+    std::string Code =
+        R"(
+        struct marked {
+            int bacon;
+            long lettuce;
+        } __attribute__((no_randomize_layout));
+
+        struct not_marked {
+            double cookies;
+        };
+        )";
+
+    auto AST = MakeAST(Code, Lang_C);
+    auto RD0 = GetRecordDeclFromAST(AST->getASTContext(), "marked");
+    auto RD1 = GetRecordDeclFromAST(AST->getASTContext(), "not_marked");
+
+    ASSERT_TRUE(RD0->getAttr<NoRandomizeLayoutAttr>());
+    ASSERT_FALSE(RD1->getAttr<NoRandomizeLayoutAttr>());
+}
+
 // This RUN_ALL_RANDSTRUCT_TESTS conditional compilation can go away once development
 // is over.
 #ifdef RUN_ALL_RANDSTRUCT_TESTS
