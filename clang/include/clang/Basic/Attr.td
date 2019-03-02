@@ -3502,3 +3502,10 @@ def RandomizeLayout : InheritableAttr {
   let Subjects = SubjectList<[Record]>;
   let Documentation = [ClangRandstructDocs];
 }
+
+def NoRandomizeLayout : InheritableAttr {
+  let Spellings = [GCC<"no_randomize_layout">, Declspec<"no_randomize_layout">,
+    Keyword<"no_randomize_layout">];
+  let Subjects = SubjectList<[Record]>;
+  let Documentation = [ClangRandstructDocs];
+}
