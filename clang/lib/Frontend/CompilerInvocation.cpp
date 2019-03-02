@@ -1824,6 +1824,7 @@ static InputKind ParseFrontendArgs(FrontendOptions &Opts, ArgList &Args,
     Opts.ProgramAction = frontend::PluginAction;
     Opts.ActionName = A->getValue();
   }
+
   if (const Arg* A = Args.getLastArg(OPT_randstruct_seed_filename)) {
     std::string seed_filename = A->getValue(0);
     std::ifstream seed_file(seed_filename.c_str());
@@ -1833,6 +1834,11 @@ static InputKind ParseFrontendArgs(FrontendOptions &Opts, ArgList &Args,
     }
     std::getline(seed_file, randstruct::SEED);
   }
+
+  if (const Arg* A = Args.getLastArg(OPT_randstruct_seed)) {
+      randstruct::SEED = A->getValue(0);
+  }
+
   Opts.AddPluginActions = Args.getAllArgValues(OPT_add_plugin);
   for (const auto *AA : Args.filtered(OPT_plugin_arg))
     Opts.PluginArgs[AA->getValue(0)].emplace_back(AA->getValue(1));
