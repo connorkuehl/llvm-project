@@ -4568,9 +4568,12 @@ once.
 
 def ClangRandstructDocs : Documentation {
   let Category = DocCatVariable;
-  let Heading = "randomize_layout";
+  let Heading = "randomize_layout, no_randomize_layout";
   let Content = [{
 The attribute ``randomize_layout`` can be added to a record-type definition to select
 it for structure layout field randomization; a compile-time hardening technique.
+
+The attribute ``no_randomize_layout`` can be added to a record-type definition to instruct
+the compiler that this structure should not have its field layout randomized.
   }];
 }
