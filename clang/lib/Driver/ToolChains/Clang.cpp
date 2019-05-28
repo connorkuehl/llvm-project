@@ -4885,6 +4885,11 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
     CmdArgs.push_back(Args.MakeArgString(Twine(N)));
   }
 
+  if (Arg *A = Args.getLastArg(options::OPT_randstruct_seed_filename_EQ)) {
+    CmdArgs.push_back( "-randstruct-seed-filename" );
+    CmdArgs.push_back(A->getValue(0));
+  }
+
   // -fvisibility= and -fvisibility-ms-compat are of a piece.
   if (const Arg *A = Args.getLastArg(options::OPT_fvisibility_EQ,
                                      options::OPT_fvisibility_ms_compat)) {

@@ -111,6 +111,8 @@ def err_drv_argument_only_allowed_with : Error<
   "invalid argument '%0' only allowed with '%1'">;
 def err_drv_argument_not_allowed_with : Error<
   "invalid argument '%0' not allowed with '%1'">;
+def err_drv_cannot_open_randstruct_seed_filename : Error<
+  "filename '%0'">;
 def err_drv_invalid_version_number : Error<
   "invalid version number in '%0'">;
 def err_drv_no_linker_llvm_support : Error<
