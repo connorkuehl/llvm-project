@@ -8,6 +8,7 @@
 
 #include "clang/Frontend/CompilerInvocation.h"
 #include "TestModuleFileExtension.h"
+#include "clang/AST/Randstruct.h"
 #include "clang/Basic/Builtins.h"
 #include "clang/Basic/CharInfo.h"
 #include "clang/Basic/CodeGenOptions.h"
@@ -90,6 +91,7 @@
 #include <tuple>
 #include <utility>
 #include <vector>
+#include <fstream>
 
 using namespace clang;
 using namespace driver;
@@ -1819,6 +1821,15 @@ static InputKind ParseFrontendArgs(FrontendOptions &Opts, ArgList &Args,
     Opts.Plugins.emplace_back(A->getValue(0));
     Opts.ProgramAction = frontend::PluginAction;
     Opts.ActionName = A->getValue();
+  }
+  if (const Arg* A = Args.getLastArg(OPT_randstruct_seed_filename)) {
+    std::string seed_filename = A->getValue(0);
+    std::ifstream seed_file(seed_filename.c_str());
+    if (!seed_file.is_open()) {
+	Diags.Report(diag::err_drv_cannot_open_randstruct_seed_filename)
+	    << A->getValue(0);
+    }
+    std::getline(seed_file, randstruct::SEED);
   }
   Opts.AddPluginActions = Args.getAllArgValues(OPT_add_plugin);
   for (const auto *AA : Args.filtered(OPT_plugin_arg))
