@@ -16949,6 +16949,8 @@ void Sema::ActOnFields(Scope *S, SourceLocation RecLoc, Decl *EnclosingDecl,
       CDecl->setIvarRBraceLoc(RBrac);
     }
   }
+
+  Context.getASTRecordLayout(Record);
 }
 
 /// Determine whether the given integral value is representable within
