@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <random>
+#include <sstream>
 #include <string>
 
 namespace clang {
@@ -225,8 +226,11 @@ void randomizeStructureLayout(const ASTContext &Context, const RecordDecl *RD) {
     }
   }
 
-  std::seed_seq seed(SEED.begin(), SEED.end());
-  std::mt19937 Rng(seed);
+  std::stringstream ss(SEED);
+  ss << ":" << RD->getNameAsString();
+  std::string seed = ss.str();
+  std::seed_seq sseq(seed.begin(), seed.end());
+  std::mt19937 Rng(sseq);
   Randstruct Rand;
   Rand.randomize(Context, Fields, Rng);
 
