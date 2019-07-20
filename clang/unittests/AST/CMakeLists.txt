@@ -28,6 +28,7 @@ add_clang_unittest(ASTTests
   Language.cpp
   NamedDeclPrinterTest.cpp
   OMPStructuredBlockTest.cpp
+  RandstructTest.cpp
   RecursiveASTVisitorTest.cpp
   SourceLocationTest.cpp
   StmtPrinterTest.cpp
