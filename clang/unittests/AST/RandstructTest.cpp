@@ -43,27 +43,13 @@ static RecordDecl* GetRecordDeclFromAST(const ASTContext& C, const std::string& 
     return FirstDeclMatcher<RecordDecl>().match(C.getTranslationUnitDecl(), recordDecl(hasName(Name)));
 }
 
-static bool FieldsInOrder(const RecordDecl* RD, std::vector<std::string>& expected)
+static std::vector<std::string> GetFieldNamesFromRecord(const RecordDecl* RD)
 {
-    auto Field = expected.begin();
-    for (auto f : RD->fields()) {
-        if (*Field == f->getNameAsString())
-            ++Field;
-    }
-
-    /* If the iterator has not advanced to the end then that means the expected
-     * order has not been satisfied, e.g:
-     *
-     *   Actual fields: a, c, b
-     *        Expected: a, b, c
-     *     1. a == a, iterator advances to b now
-     *     2. c != b, iterator unchanged
-     *     3. b == b, iterator advances to c now
-     *     4. Done iterating, iterator is pointing to c, not the end, this means
-     *        the expected order of the structure fields does not match the actual
-     *        order.
-     */
-    return Field == expected.end();
+    std::vector<std::string> fields;
+    fields.reserve(8);
+    for (auto f : RD->fields())
+        fields.push_back(f->getNameAsString());
+    return fields;
 }
 
 TEST(StructureLayoutRandomization, UnmarkedStructuresAreNotRandomized)
@@ -79,9 +65,10 @@ TEST(StructureLayoutRandomization, UnmarkedStructuresAreNotRandomized)
 
     auto AST = MakeAST(Code, Lang_C);
     auto RD = GetRecordDeclFromAST(AST->getASTContext(), "dont_randomize_me");
-    std::vector<std::string> expected = {"potato", "tomato", "cabbage"};
+    const std::vector<std::string> expected = {"potato", "tomato", "cabbage"};
+    const std::vector<std::string> actual = GetFieldNamesFromRecord(RD);
 
-    ASSERT_TRUE(FieldsInOrder(RD, expected));
+    ASSERT_EQ(actual, expected);
 }
 
 // This RUN_ALL_RANDSTRUCT_TESTS conditional compilation can go away once development
