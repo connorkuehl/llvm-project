@@ -61,6 +61,7 @@ class ObjCInterfaceDecl;
 class ObjCMethodDecl;
 class ObjCProtocolDecl;
 struct PrintingPolicy;
+class Randstruct;
 class RecordDecl;
 class SourceManager;
 class Stmt;
@@ -1279,6 +1280,7 @@ class DeclContext {
   /// For hasNeedToReconcileExternalVisibleStorage,
   /// hasLazyLocalLexicalLookups, hasLazyExternalLexicalLookups
   friend class ASTWriter;
+  friend class Randstruct;
 
   // We use uint64_t in the bit-fields below since some bit-fields
   // cross the unsigned boundary and this breaks the packing.
