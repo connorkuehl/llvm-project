@@ -1269,6 +1269,9 @@ DeclContext::BuildDeclChain(ArrayRef<Decl *> Decls,
     PrevDecl = D;
   }
 
+  // Last item in the linked list should have a null next pointer.
+  PrevDecl->NextInContextAndBits.setPointer(nullptr);
+
   return std::make_pair(FirstNewDecl, PrevDecl);
 }
 

@@ -15,6 +15,7 @@
 #include "clang/AST/DeclCXX.h"
 #include "clang/AST/DeclObjC.h"
 #include "clang/AST/Expr.h"
+#include "clang/AST/Randstruct.h"
 #include "clang/Basic/TargetInfo.h"
 #include "llvm/ADT/SmallSet.h"
 #include "llvm/Support/Format.h"
@@ -3039,6 +3040,11 @@ ASTContext::getASTRecordLayout(const RecordDecl *D) const {
   // is recursive.
   const ASTRecordLayout *Entry = ASTRecordLayouts[D];
   if (Entry) return *Entry;
+
+
+  if (D->getAttr<RandomizeLayoutAttr>()) {
+      RandomizeStructureLayout(*this, D);
+  }
 
   const ASTRecordLayout *NewEntry = nullptr;
 
