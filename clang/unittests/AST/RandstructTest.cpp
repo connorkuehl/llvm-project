@@ -143,12 +143,10 @@ TEST(RANDSTRUCT_TEST, StructuresWithRandomizeLayoutAttrHaveFieldsRandomized)
     ASSERT_NE(before, after);
 }
 
-// This RUN_ALL_RANDSTRUCT_TESTS conditional compilation can go away once development
-// is over.
-#ifdef RUN_ALL_RANDSTRUCT_TESTS
-
 /*
   * Structures marked for randomization are randomized
+  * Designated initializers should map directly onto the new order (right now they
+    do not)
   * Structures marked for NO RANDOMIZATION remain the same
   * Structures marked for both randomization and NO randomization remain the same
     and a warning should be emitted.
@@ -163,8 +161,6 @@ TEST(RANDSTRUCT_TEST, StructuresWithRandomizeLayoutAttrHaveFieldsRandomized)
   * Anonymous unions (and the anonymous struct extension)
   * Types with common initial sequence: http://eel.is/c++draft/class.mem#22
 */
-
-#endif
 
 } // ast_matchers
 } // clang
