@@ -26,6 +26,7 @@
 #include "DeclMatcher.h"
 #include "Language.h"
 
+#include "clang/AST/Randstruct.h"
 #include "gtest/gtest.h"
 
 namespace clang {
@@ -115,6 +116,31 @@ TEST(RANDSTRUCT_TEST, StructuresCanBeMarkedWithNoRandomizeLayoutAttr)
 
     ASSERT_TRUE(RD0->getAttr<NoRandomizeLayoutAttr>());
     ASSERT_FALSE(RD1->getAttr<NoRandomizeLayoutAttr>());
+}
+
+TEST(RANDSTRUCT_TEST, StructuresWithRandomizeLayoutAttrHaveFieldsRandomized)
+{
+    std::string Code =
+        R"(
+        struct test_struct {
+            int a;
+            int b;
+            int c;
+            int d;
+            int e;
+            int f;
+        } __attribute__((randomize_layout));
+        )";
+
+    auto AST = MakeAST(Code, Lang_C);
+    auto RD = GetRecordDeclFromAST(AST->getASTContext(), "test_struct");
+    RandomizeStructureLayout(AST->getASTContext(), RD);
+    std::vector<std::string> before = {"a", "b", "c", "d", "e", "f"};
+    std::vector<std::string> after = GetFieldNamesFromRecord(RD);
+
+    // FIXME: Could this be a brittle test? Planning on having a separate unit
+    // test for reproducible randomizations with seed.
+    ASSERT_NE(before, after);
 }
 
 // This RUN_ALL_RANDSTRUCT_TESTS conditional compilation can go away once development
