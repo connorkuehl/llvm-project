@@ -17,9 +17,12 @@
 #include "Decl.h"
 
 namespace clang {
+namespace randstruct {
 
+bool ShouldRandomize(const RecordDecl* RD);
 void RandomizeStructureLayout(const ASTContext& C, const RecordDecl* RD);
 
+} // namespace randstruct
 } // namespace clang
 
 #endif // CLANG_INCLUDE_AST_RANDSTRUCT_H_
