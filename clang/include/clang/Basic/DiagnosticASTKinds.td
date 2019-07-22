@@ -543,4 +543,7 @@ def warn_padded_struct_size : Warning<
   InGroup<Padded>, DefaultIgnore;
 def warn_unnecessary_packed : Warning<
   "packed attribute is unnecessary for %0">, InGroup<Packed>, DefaultIgnore;
+def warn_randomize_attr_conflict : Warning<
+  "struct declared with 'randomize_layout' and 'no_randomize_layout' attributes; "
+  "attribute 'no_randomize_layout' takes precedence">, InGroup<DiagGroup<"no-randomize-layout">>;
 }

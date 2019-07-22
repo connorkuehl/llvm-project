@@ -162,14 +162,63 @@ TEST(RANDSTRUCT_TEST, StructuresMarkedWithNoRandomizeLayoutShouldBeRejectedAndUn
     auto AST = MakeAST(Code, Lang_C);
     auto RD = GetRecordDeclFromAST(AST->getASTContext(), "test_struct");
 
-    ASSERT_FALSE(randstruct::ShouldRandomize(RD));
+    ASSERT_FALSE(randstruct::ShouldRandomize(AST->getASTContext(), RD));
 
     std::vector<std::string> expected = {"a", "b", "c", "d", "e", "f"};
     std::vector<std::string> actual = GetFieldNamesFromRecord(RD);
     // FIXME: Is it messy to call getASTRecordLayout? Thinking that ShouldRandomize() and
     // RandomizeStructureLayout() are the functions under test but this tests proper decision
     // making on ShouldRandomize()'s part and also verifies Randstruct doesn't do anything to it.
-    AST->getASTContext().getASTRecordLayout(RD);
+    static_cast<void>(AST->getASTContext().getASTRecordLayout(RD));
+    ASSERT_EQ(actual, expected);
+}
+
+// FIXME: Clang trips an assertion in the DiagnosticsEngine when the warning is emitted
+// while running under the test suite: clang/lib/Frontend/TextDiagnosticPrinter.cpp:150:
+// virtual void clang::TextDiagnosticPrinter::HandleDiagnostic(clang::DiagnosticsEngine::Level, const clang::Diagnostic&):
+// Assertion `TextDiag && "Unexpected diagnostic outside source file processing"' failed.
+//
+// Although the test *technically* is marked as pass; outside of the test suite this functionality
+// works and no assertion is tripped.
+TEST(RANDSTRUCT_TEST, DISABLED_EmitWarningWhenStructureIsMarkedWithBothRandomizeAndNoRandomizeAttributes)
+{
+    std::string Code =
+        R"(
+        struct test_struct {
+            int a;
+            int b;
+            int c;
+        } __attribute__((no_randomize_layout)) __attribute__((randomize_layout));
+        )";
+
+    auto AST = MakeAST(Code, Lang_C);
+    ASSERT_EQ(AST->getASTContext().getDiagnostics().getNumWarnings(), 1UL);
+}
+
+// FIXME: Clang trips an assertion in the DiagnosticsEngine when the warning is emitted
+// while running under the test suite: clang/lib/Frontend/TextDiagnosticPrinter.cpp:150:
+// virtual void clang::TextDiagnosticPrinter::HandleDiagnostic(clang::DiagnosticsEngine::Level, const clang::Diagnostic&):
+// Assertion `TextDiag && "Unexpected diagnostic outside source file processing"' failed.
+//
+// Although the test *technically* is marked as pass; outside of the test suite this functionality
+// works and no assertion is tripped.
+TEST(RANDSTRUCT_TEST, DISABLED_StructureMarkedWithBothAttributesRemainsUnchanged)
+{
+    std::string Code =
+        R"(
+        struct test_struct {
+            int a;
+            int b;
+            int c;
+        } __attribute__((no_randomize_layout)) __attribute__((randomize_layout));
+        )";
+
+    auto AST = MakeAST(Code, Lang_C);
+    auto RD = GetRecordDeclFromAST(AST->getASTContext(), "test_struct");
+    static_cast<void>(AST->getASTContext().getASTRecordLayout(RD));
+
+    std::vector<std::string> expected = {"a", "b", "c"};
+    std::vector<std::string> actual = GetFieldNamesFromRecord(RD);
     ASSERT_EQ(actual, expected);
 }
 
@@ -177,8 +226,6 @@ TEST(RANDSTRUCT_TEST, StructuresMarkedWithNoRandomizeLayoutShouldBeRejectedAndUn
   * Structures marked for randomization are randomized
   * Designated initializers should map directly onto the new order (right now they
     do not)
-  * Structures marked for both randomization and NO randomization remain the same
-    and a warning should be emitted.
   * Alignment attribute
   * Packed attribute
   * No unique address attribute

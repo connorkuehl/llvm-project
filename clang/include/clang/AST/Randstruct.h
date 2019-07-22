@@ -19,7 +19,7 @@
 namespace clang {
 namespace randstruct {
 
-bool ShouldRandomize(const RecordDecl* RD);
+bool ShouldRandomize(const ASTContext& C, const RecordDecl* RD);
 void RandomizeStructureLayout(const ASTContext& C, const RecordDecl* RD);
 
 } // namespace randstruct
