@@ -29,6 +29,8 @@
 #include "clang/AST/Randstruct.h"
 #include "gtest/gtest.h"
 
+using namespace clang::randstruct;
+
 namespace clang {
 namespace ast_matchers {
 
@@ -143,11 +145,38 @@ TEST(RANDSTRUCT_TEST, StructuresWithRandomizeLayoutAttrHaveFieldsRandomized)
     ASSERT_NE(before, after);
 }
 
+TEST(RANDSTRUCT_TEST, StructuresMarkedWithNoRandomizeLayoutShouldBeRejectedAndUnchanged)
+{
+    std::string Code =
+        R"(
+        struct test_struct {
+            int a;
+            int b;
+            int c;
+            int d;
+            int e;
+            int f;
+        } __attribute__((no_randomize_layout));
+        )";
+
+    auto AST = MakeAST(Code, Lang_C);
+    auto RD = GetRecordDeclFromAST(AST->getASTContext(), "test_struct");
+
+    ASSERT_FALSE(randstruct::ShouldRandomize(RD));
+
+    std::vector<std::string> expected = {"a", "b", "c", "d", "e", "f"};
+    std::vector<std::string> actual = GetFieldNamesFromRecord(RD);
+    // FIXME: Is it messy to call getASTRecordLayout? Thinking that ShouldRandomize() and
+    // RandomizeStructureLayout() are the functions under test but this tests proper decision
+    // making on ShouldRandomize()'s part and also verifies Randstruct doesn't do anything to it.
+    AST->getASTContext().getASTRecordLayout(RD);
+    ASSERT_EQ(actual, expected);
+}
+
 /*
   * Structures marked for randomization are randomized
   * Designated initializers should map directly onto the new order (right now they
     do not)
-  * Structures marked for NO RANDOMIZATION remain the same
   * Structures marked for both randomization and NO randomization remain the same
     and a warning should be emitted.
   * Alignment attribute
