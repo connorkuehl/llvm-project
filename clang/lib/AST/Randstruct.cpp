@@ -13,6 +13,7 @@
 
 #include <string>
 
+#include "clang/AST/Attr.h"
 #include "llvm/ADT/SmallVector.h"
 
 #include "clang/AST/Randstruct.h"
@@ -42,6 +43,13 @@ void Randstruct::Commit(const RecordDecl* RD, SmallVectorImpl<Decl*>& NewDeclOrd
     RD->LastDecl = Last;
 }
 
+namespace randstruct {
+
+bool ShouldRandomize(const RecordDecl* RD)
+{
+    return RD->getAttr<NoRandomizeLayoutAttr>() == nullptr;
+}
+
 void RandomizeStructureLayout(const ASTContext& C, const RecordDecl* RD)
 {
     const auto SMALL_VEC_SZ = 16UL;
@@ -67,4 +75,5 @@ void RandomizeStructureLayout(const ASTContext& C, const RecordDecl* RD)
     randstruct.Commit(RD, new_order);
 }
 
+} // namespace randstruct
 } // namespace clang

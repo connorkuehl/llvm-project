@@ -3042,8 +3042,8 @@ ASTContext::getASTRecordLayout(const RecordDecl *D) const {
   if (Entry) return *Entry;
 
 
-  if (D->getAttr<RandomizeLayoutAttr>()) {
-      RandomizeStructureLayout(*this, D);
+  if (randstruct::ShouldRandomize(D)) {
+      randstruct::RandomizeStructureLayout(*this, D);
   }
 
   const ASTRecordLayout *NewEntry = nullptr;
