@@ -13,7 +13,10 @@
 
 #include <string>
 
+#include "clang/AST/ASTContext.h"
+#include "clang/AST/ASTDiagnostic.h"
 #include "clang/AST/Attr.h"
+#include "clang/Basic/Diagnostic.h"
 #include "llvm/ADT/SmallVector.h"
 
 #include "clang/AST/Randstruct.h"
@@ -45,9 +48,15 @@ void Randstruct::Commit(const RecordDecl* RD, SmallVectorImpl<Decl*>& NewDeclOrd
 
 namespace randstruct {
 
-bool ShouldRandomize(const RecordDecl* RD)
+bool ShouldRandomize(const ASTContext& C, const RecordDecl* RD)
 {
-    return RD->getAttr<NoRandomizeLayoutAttr>() == nullptr;
+    auto has_rand_attr = RD->getAttr<RandomizeLayoutAttr>();
+    auto has_norand_attr = RD->getAttr<NoRandomizeLayoutAttr>();
+    if (has_rand_attr && has_norand_attr) {
+        C.getDiagnostics().Report(RD->getLocation(), diag::warn_randomize_attr_conflict);
+    }
+
+    return !has_norand_attr && has_rand_attr;
 }
 
 void RandomizeStructureLayout(const ASTContext& C, const RecordDecl* RD)
