@@ -3042,7 +3042,7 @@ ASTContext::getASTRecordLayout(const RecordDecl *D) const {
   if (Entry) return *Entry;
 
 
-  if (randstruct::ShouldRandomize(D)) {
+  if (randstruct::ShouldRandomize(*this, D)) {
       randstruct::RandomizeStructureLayout(*this, D);
   }
 
