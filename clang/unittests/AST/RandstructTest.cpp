@@ -152,7 +152,7 @@ TEST(RANDSTRUCT_TEST, StructuresCanBeMarkedWithNoRandomizeLayoutAttr)
     ASSERT_FALSE(RD1->getAttr<NoRandomizeLayoutAttr>());
 }
 
-TEST(RANDSTRUCT_TEST, StructuresWithRandomizeLayoutAttrHaveFieldsRandomized)
+TEST(RANDSTRUCT_TEST, StructuresLayoutFieldLocationsCanBeRandomized)
 {
     std::string Code =
         R"(
@@ -163,7 +163,7 @@ TEST(RANDSTRUCT_TEST, StructuresWithRandomizeLayoutAttrHaveFieldsRandomized)
             int d;
             int e;
             int f;
-        } __attribute__((randomize_layout));
+        };
         )";
 
     auto AST = MakeAST(Code, Lang_C);
