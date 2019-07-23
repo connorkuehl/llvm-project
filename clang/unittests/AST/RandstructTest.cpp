@@ -254,21 +254,6 @@ TEST(RANDSTRUCT_TEST, DISABLED_StructureMarkedWithBothAttributesRemainsUnchanged
     ASSERT_EQ(actual, expected);
 }
 
-/*
-  * Structures marked for randomization are randomized
-  * Designated initializers should map directly onto the new order (right now they
-    do not)
-  * Alignment attribute
-  * Packed attribute
-  * No unique address attribute
-  * Bit-fields
-  * Zero-width bit-field
-  * Zero or unsized array at end of struct
-  * C++ inheritance with vtables
-  * C++ virtual inheritance
-  * Anonymous unions (and the anonymous struct extension)
-  * Types with common initial sequence: http://eel.is/c++draft/class.mem#22
-*/
 TEST(RANDSTRUCT_TEST, AdjacentBitfieldsRemainAdjacentAfterRandomization)
 {
     std::string Code =
