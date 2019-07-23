@@ -55,6 +55,38 @@ static std::vector<std::string> GetFieldNamesFromRecord(const RecordDecl* RD)
     return fields;
 }
 
+static bool IsSubsequence(const std::vector<std::string>& Seq, const std::vector<std::string>& Subseq)
+{
+    auto seq_len = Seq.size();
+    auto sseq_len = Subseq.size();
+
+    auto is_subseq = false;
+    for (auto i = 0u; i < seq_len; ++i) {
+        if (Seq[i] == Subseq[0]) {
+            is_subseq = true;
+            for (auto j = 0u; j + i < seq_len && j < sseq_len; ++j) {
+                if (Seq[j + i] != Subseq[j]) {
+                    is_subseq = false;
+                    break;
+                }
+            }
+        }
+    }
+    return is_subseq;
+}
+
+#define RANDSTRUCT_TEST_SUITE_TEST StructureLayoutRandomizationTestSuiteTest
+
+TEST(RANDSTRUCT_TEST_SUITE_TEST, CanDetermineIfSubsequenceExists)
+{
+    std::vector<std::string> S0 = {"a", "b", "c", "d"};
+    ASSERT_TRUE(IsSubsequence(S0, {"b", "c"}));
+    ASSERT_TRUE(IsSubsequence(S0, {"a", "b", "c", "d"}));
+    ASSERT_TRUE(IsSubsequence(S0, {"b", "c", "d"}));
+    ASSERT_TRUE(IsSubsequence(S0, {"a"}));
+    ASSERT_FALSE(IsSubsequence(S0, {"a", "d"}));
+}
+
 #define RANDSTRUCT_TEST StructureLayoutRandomization
 
 TEST(RANDSTRUCT_TEST, UnmarkedStructuresAreNotRandomized)
@@ -237,6 +269,28 @@ TEST(RANDSTRUCT_TEST, DISABLED_StructureMarkedWithBothAttributesRemainsUnchanged
   * Anonymous unions (and the anonymous struct extension)
   * Types with common initial sequence: http://eel.is/c++draft/class.mem#22
 */
+TEST(RANDSTRUCT_TEST, AdjacentBitfieldsRemainAdjacentAfterRandomization)
+{
+    std::string Code =
+        R"(
+        struct test_struct {
+            int a;
+            int b;
+            int x : 1;
+            int y : 1;
+            int z : 1;
+            int c;
+        } __attribute__((randomize_layout));
+        )";
+
+    auto AST = MakeAST(Code, Lang_C);
+    auto RD = GetRecordDeclFromAST(AST->getASTContext(), "test_struct");
+    static_cast<void>(AST->getASTContext().getASTRecordLayout(RD));
+
+    std::vector<std::string> actual = GetFieldNamesFromRecord(RD);
+    std::vector<std::string> subseq = {"x", "y", "z"};
+    ASSERT_TRUE(IsSubsequence(actual, subseq));
+}
 
 } // ast_matchers
 } // clang
