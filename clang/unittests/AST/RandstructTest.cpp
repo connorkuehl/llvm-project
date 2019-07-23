@@ -105,7 +105,7 @@ TEST(RANDSTRUCT_TEST, UnmarkedStructuresAreNotRandomized)
     const std::vector<std::string> expected = {"potato", "tomato", "cabbage"};
     const std::vector<std::string> actual = GetFieldNamesFromRecord(RD);
 
-    ASSERT_EQ(actual, expected);
+    ASSERT_EQ(expected, actual);
 }
 
 TEST(RANDSTRUCT_TEST, StructuresCanBeMarkedWithRandomizeLayoutAttr)
@@ -202,7 +202,7 @@ TEST(RANDSTRUCT_TEST, StructuresMarkedWithNoRandomizeLayoutShouldBeRejectedAndUn
     // RandomizeStructureLayout() are the functions under test but this tests proper decision
     // making on ShouldRandomize()'s part and also verifies Randstruct doesn't do anything to it.
     static_cast<void>(AST->getASTContext().getASTRecordLayout(RD));
-    ASSERT_EQ(actual, expected);
+    ASSERT_EQ(expected, actual);
 }
 
 // FIXME: Clang trips an assertion in the DiagnosticsEngine when the warning is emitted
@@ -251,7 +251,7 @@ TEST(RANDSTRUCT_TEST, DISABLED_StructureMarkedWithBothAttributesRemainsUnchanged
 
     std::vector<std::string> expected = {"a", "b", "c"};
     std::vector<std::string> actual = GetFieldNamesFromRecord(RD);
-    ASSERT_EQ(actual, expected);
+    ASSERT_EQ(expected, actual);
 }
 
 TEST(RANDSTRUCT_TEST, AdjacentBitfieldsRemainAdjacentAfterRandomization)
