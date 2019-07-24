@@ -277,5 +277,26 @@ TEST(RANDSTRUCT_TEST, AdjacentBitfieldsRemainAdjacentAfterRandomization)
     ASSERT_TRUE(IsSubsequence(actual, subseq));
 }
 
+TEST(RANDSTRUCT_TEST, VariableLengthArrayMemberRemainsAtEndOfStructure)
+{
+    std::string Code =
+        R"(
+        struct test_struct {
+            int a;
+            double b;
+            short c;
+            char name[];
+        };
+        )";
+
+    auto AST = MakeAST(Code, Lang_C);
+    auto RD = GetRecordDeclFromAST(AST->getASTContext(), "test_struct");
+    RandomizeStructureLayout(AST->getASTContext(), RD);
+
+    std::vector<std::string> fields = GetFieldNamesFromRecord(RD);
+    auto vla = std::find(fields.begin(), fields.end(), "name");
+    ASSERT_TRUE(vla + 1 == fields.end());
+}
+
 } // ast_matchers
 } // clang
