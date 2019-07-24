@@ -19,6 +19,7 @@
 
 #include <vector>
 
+#include "clang/AST/RecordLayout.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/Frontend/ASTUnit.h"
 #include "clang/Tooling/Tooling.h"
@@ -296,6 +297,44 @@ TEST(RANDSTRUCT_TEST, VariableLengthArrayMemberRemainsAtEndOfStructure)
     std::vector<std::string> fields = GetFieldNamesFromRecord(RD);
     auto vla = std::find(fields.begin(), fields.end(), "name");
     ASSERT_TRUE(vla + 1 == fields.end());
+}
+
+TEST(RANDSTRUCT_TEST, RandstructDoesNotOverrideThePackedAttr)
+{
+    std::string Code =
+        R"(
+        struct test_struct {
+            char a;
+            short b;
+            int c;
+        } __attribute__((packed, randomize_layout));
+
+        struct another_struct {
+            char a;
+            int c;
+        } __attribute__((packed, randomize_layout));
+
+        struct last_struct {
+            char a;
+            long long b;
+        } __attribute__((packed, randomize_layout));
+        )";
+
+    auto AST = MakeAST(Code, Lang_C);
+    auto RD = GetRecordDeclFromAST(AST->getASTContext(), "test_struct");
+    auto& layout = AST->getASTContext().getASTRecordLayout(RD);
+
+    ASSERT_EQ(7, layout.getSize().getQuantity());
+
+    auto RD1 = GetRecordDeclFromAST(AST->getASTContext(), "another_struct");
+    auto& layout1 = AST->getASTContext().getASTRecordLayout(RD1);
+
+    ASSERT_EQ(5, layout1.getSize().getQuantity());
+
+    auto RD2 = GetRecordDeclFromAST(AST->getASTContext(), "last_struct");
+    auto& layout2 = AST->getASTContext().getASTRecordLayout(RD2);
+
+    ASSERT_EQ(9, layout2.getSize().getQuantity());
 }
 
 } // ast_matchers
