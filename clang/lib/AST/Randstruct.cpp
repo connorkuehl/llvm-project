@@ -192,9 +192,16 @@ void RandomizeStructureLayout(const ASTContext& C, const RecordDecl* RD)
     const auto SMALL_VEC_SZ = 16UL;
     SmallVector<Decl*, SMALL_VEC_SZ> others;
     SmallVector<FieldDecl*, SMALL_VEC_SZ> fields;
+    FieldDecl* vla = nullptr;
+
     for (auto decl : RD->decls()) {
         if (isa<FieldDecl>(decl)) {
-            fields.push_back(cast<FieldDecl>(decl));
+            auto field = cast<FieldDecl>(decl);
+            if (field->getType()->isIncompleteArrayType()) {
+                vla = field;
+            } else {
+                fields.push_back(field);
+            }
         } else {
             others.push_back(decl);
         }
@@ -205,8 +212,9 @@ void RandomizeStructureLayout(const ASTContext& C, const RecordDecl* RD)
     randstruct.Randomize(C, fields);
 
     SmallVector<Decl*, SMALL_VEC_SZ> new_order = others;
-    for (auto f : fields) {
-        new_order.push_back(cast<FieldDecl>(f));
+    new_order.insert(new_order.end(), fields.begin(), fields.end());
+    if (vla) {
+        new_order.push_back(vla);
     }
 
     randstruct.Commit(RD, new_order);
