@@ -337,5 +337,25 @@ TEST(RANDSTRUCT_TEST, RandstructDoesNotOverrideThePackedAttr)
     ASSERT_EQ(9, layout2.getSize().getQuantity());
 }
 
+TEST(RANDSTRUCT_TEST, ZeroWidthBitfieldsSeparateAllocationUnits)
+{
+    std::string Code =
+        R"(
+        struct test_struct {
+            int a : 1;
+            int   : 0;
+            int b : 1;
+        };
+        )";
+    auto AST = MakeAST(Code, Lang_C);
+    auto RD = GetRecordDeclFromAST(AST->getASTContext(), "test_struct");
+    std::vector<std::string> actual = GetFieldNamesFromRecord(RD);
+    ASSERT_TRUE(IsSubsequence(actual, {"a", "", "b"}));
+
+    RandomizeStructureLayout(AST->getASTContext(), RD);
+    actual = GetFieldNamesFromRecord(RD);
+    ASSERT_FALSE(IsSubsequence(actual, {"a", "", "b"}));
+}
+
 } // ast_matchers
 } // clang
