@@ -93,7 +93,7 @@ void Randstruct::Randomize(const ASTContext& C, SmallVectorImpl<FieldDecl*>& fie
         auto field = fields.begin();
         auto *f = llvm::cast<FieldDecl>(*field);
 
-        if (f->isBitField()) {
+        if (f->isBitField() && !f->isZeroLengthBitField(C)) {
             // Start a bitfield run if this is the first bitfield
             // we have found.
             if (!currentBitfieldRun) {
