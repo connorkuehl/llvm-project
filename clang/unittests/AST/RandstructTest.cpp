@@ -17,83 +17,80 @@
  * ` ./tools/clang/unittests/AST/ASTTests --gtest_filter=StructureLayoutRandomization*`
  */
 
-#include <vector>
+#include "clang/AST/Randstruct.h"
+#include "gtest/gtest.h"
 
+#include "DeclMatcher.h"
+#include "Language.h"
 #include "clang/AST/RecordLayout.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/Frontend/ASTUnit.h"
 #include "clang/Tooling/Tooling.h"
 
-#include "DeclMatcher.h"
-#include "Language.h"
-
-#include "clang/AST/Randstruct.h"
-#include "gtest/gtest.h"
+#include <vector>
 
 using namespace clang::randstruct;
 
 namespace clang {
 namespace ast_matchers {
 
-static std::unique_ptr<ASTUnit> MakeAST(const std::string& SourceCode, Language Lang)
-{
-    auto Args = getBasicRunOptionsForLanguage(Lang);
-    auto AST = tooling::buildASTFromCodeWithArgs(SourceCode, Args, "input.cc");
-    return AST;
+static std::unique_ptr<ASTUnit> makeAST(const std::string &SourceCode,
+                                        Language Lang) {
+  const auto Args = getBasicRunOptionsForLanguage(Lang);
+  auto AST = tooling::buildASTFromCodeWithArgs(SourceCode, Args, "input.cc");
+  return AST;
 }
 
-static RecordDecl* GetRecordDeclFromAST(const ASTContext& C, const std::string& Name)
-{
-    return FirstDeclMatcher<RecordDecl>().match(C.getTranslationUnitDecl(), recordDecl(hasName(Name)));
+static RecordDecl *getRecordDeclFromAST(const ASTContext &C,
+                                        const std::string &Name) {
+  return FirstDeclMatcher<RecordDecl>().match(C.getTranslationUnitDecl(),
+                                              recordDecl(hasName(Name)));
 }
 
-static std::vector<std::string> GetFieldNamesFromRecord(const RecordDecl* RD)
-{
-    std::vector<std::string> fields;
-    fields.reserve(8);
-    for (auto f : RD->fields())
-        fields.push_back(f->getNameAsString());
-    return fields;
+static std::vector<std::string> getFieldNamesFromRecord(const RecordDecl *RD) {
+  std::vector<std::string> Fields;
+  Fields.reserve(8);
+  for (auto *Field : RD->fields())
+    Fields.push_back(Field->getNameAsString());
+  return Fields;
 }
 
-static bool IsSubsequence(const std::vector<std::string>& Seq, const std::vector<std::string>& Subseq)
-{
-    auto seq_len = Seq.size();
-    auto sseq_len = Subseq.size();
+static bool isSubsequence(const std::vector<std::string> &Seq,
+                          const std::vector<std::string> &Subseq) {
+  const auto SeqLen = Seq.size();
+  const auto SubLen = Subseq.size();
 
-    auto is_subseq = false;
-    for (auto i = 0u; i < seq_len; ++i) {
-        if (Seq[i] == Subseq[0]) {
-            is_subseq = true;
-            for (auto j = 0u; j + i < seq_len && j < sseq_len; ++j) {
-                if (Seq[j + i] != Subseq[j]) {
-                    is_subseq = false;
-                    break;
-                }
-            }
+  auto IsSubseq = false;
+  for (auto I = 0u; I < SeqLen; ++I) {
+    if (Seq[I] == Subseq[0]) {
+      IsSubseq = true;
+      for (auto J = 0u; J + I < SeqLen && J < SubLen; ++J) {
+        if (Seq[J + I] != Subseq[J]) {
+          IsSubseq = false;
+          break;
         }
+      }
     }
-    return is_subseq;
+  }
+  return IsSubseq;
 }
 
 #define RANDSTRUCT_TEST_SUITE_TEST StructureLayoutRandomizationTestSuiteTest
 
-TEST(RANDSTRUCT_TEST_SUITE_TEST, CanDetermineIfSubsequenceExists)
-{
-    std::vector<std::string> S0 = {"a", "b", "c", "d"};
-    ASSERT_TRUE(IsSubsequence(S0, {"b", "c"}));
-    ASSERT_TRUE(IsSubsequence(S0, {"a", "b", "c", "d"}));
-    ASSERT_TRUE(IsSubsequence(S0, {"b", "c", "d"}));
-    ASSERT_TRUE(IsSubsequence(S0, {"a"}));
-    ASSERT_FALSE(IsSubsequence(S0, {"a", "d"}));
+TEST(RANDSTRUCT_TEST_SUITE_TEST, CanDetermineIfSubsequenceExists) {
+  const std::vector<std::string> S0 = {"a", "b", "c", "d"};
+  ASSERT_TRUE(isSubsequence(S0, {"b", "c"}));
+  ASSERT_TRUE(isSubsequence(S0, {"a", "b", "c", "d"}));
+  ASSERT_TRUE(isSubsequence(S0, {"b", "c", "d"}));
+  ASSERT_TRUE(isSubsequence(S0, {"a"}));
+  ASSERT_FALSE(isSubsequence(S0, {"a", "d"}));
 }
 
 #define RANDSTRUCT_TEST StructureLayoutRandomization
 
-TEST(RANDSTRUCT_TEST, UnmarkedStructuresAreNotRandomized)
-{
-    std::string Code =
-        R"(
+TEST(RANDSTRUCT_TEST, UnmarkedStructuresAreNotRandomized) {
+  std::string Code =
+      R"(
         struct dont_randomize_me {
             int potato;
             float tomato;
@@ -101,18 +98,17 @@ TEST(RANDSTRUCT_TEST, UnmarkedStructuresAreNotRandomized)
         };
         )";
 
-    auto AST = MakeAST(Code, Lang_C);
-    auto RD = GetRecordDeclFromAST(AST->getASTContext(), "dont_randomize_me");
-    const std::vector<std::string> expected = {"potato", "tomato", "cabbage"};
-    const std::vector<std::string> actual = GetFieldNamesFromRecord(RD);
+  const auto AST = makeAST(Code, Lang_C);
+  const auto *RD = getRecordDeclFromAST(AST->getASTContext(), "dont_randomize_me");
+  const std::vector<std::string> Expected = {"potato", "tomato", "cabbage"};
+  const std::vector<std::string> Actual = getFieldNamesFromRecord(RD);
 
-    ASSERT_EQ(expected, actual);
+  ASSERT_EQ(Expected, Actual);
 }
 
-TEST(RANDSTRUCT_TEST, StructuresCanBeMarkedWithRandomizeLayoutAttr)
-{
-    std::string Code =
-        R"(
+TEST(RANDSTRUCT_TEST, StructuresCanBeMarkedWithRandomizeLayoutAttr) {
+  std::string Code =
+      R"(
         struct marked {
             int bacon;
             long lettuce;
@@ -123,18 +119,17 @@ TEST(RANDSTRUCT_TEST, StructuresCanBeMarkedWithRandomizeLayoutAttr)
         };
         )";
 
-    auto AST = MakeAST(Code, Lang_C);
-    auto RD0 = GetRecordDeclFromAST(AST->getASTContext(), "marked");
-    auto RD1 = GetRecordDeclFromAST(AST->getASTContext(), "not_marked");
+  const auto AST = makeAST(Code, Lang_C);
+  const auto *RD0 = getRecordDeclFromAST(AST->getASTContext(), "marked");
+  const auto *RD1 = getRecordDeclFromAST(AST->getASTContext(), "not_marked");
 
-    ASSERT_TRUE(RD0->getAttr<RandomizeLayoutAttr>());
-    ASSERT_FALSE(RD1->getAttr<RandomizeLayoutAttr>());
+  ASSERT_TRUE(RD0->getAttr<RandomizeLayoutAttr>());
+  ASSERT_FALSE(RD1->getAttr<RandomizeLayoutAttr>());
 }
 
-TEST(RANDSTRUCT_TEST, StructuresCanBeMarkedWithNoRandomizeLayoutAttr)
-{
-    std::string Code =
-        R"(
+TEST(RANDSTRUCT_TEST, StructuresCanBeMarkedWithNoRandomizeLayoutAttr) {
+  std::string Code =
+      R"(
         struct marked {
             int bacon;
             long lettuce;
@@ -145,18 +140,17 @@ TEST(RANDSTRUCT_TEST, StructuresCanBeMarkedWithNoRandomizeLayoutAttr)
         };
         )";
 
-    auto AST = MakeAST(Code, Lang_C);
-    auto RD0 = GetRecordDeclFromAST(AST->getASTContext(), "marked");
-    auto RD1 = GetRecordDeclFromAST(AST->getASTContext(), "not_marked");
+  const auto AST = makeAST(Code, Lang_C);
+  const auto *RD0 = getRecordDeclFromAST(AST->getASTContext(), "marked");
+  const auto *RD1 = getRecordDeclFromAST(AST->getASTContext(), "not_marked");
 
-    ASSERT_TRUE(RD0->getAttr<NoRandomizeLayoutAttr>());
-    ASSERT_FALSE(RD1->getAttr<NoRandomizeLayoutAttr>());
+  ASSERT_TRUE(RD0->getAttr<NoRandomizeLayoutAttr>());
+  ASSERT_FALSE(RD1->getAttr<NoRandomizeLayoutAttr>());
 }
 
-TEST(RANDSTRUCT_TEST, StructuresLayoutFieldLocationsCanBeRandomized)
-{
-    std::string Code =
-        R"(
+TEST(RANDSTRUCT_TEST, StructuresLayoutFieldLocationsCanBeRandomized) {
+  std::string Code =
+      R"(
         struct test_struct {
             int a;
             int b;
@@ -167,21 +161,21 @@ TEST(RANDSTRUCT_TEST, StructuresLayoutFieldLocationsCanBeRandomized)
         };
         )";
 
-    auto AST = MakeAST(Code, Lang_C);
-    auto RD = GetRecordDeclFromAST(AST->getASTContext(), "test_struct");
-    RandomizeStructureLayout(AST->getASTContext(), RD);
-    std::vector<std::string> before = {"a", "b", "c", "d", "e", "f"};
-    std::vector<std::string> after = GetFieldNamesFromRecord(RD);
+  const auto AST = makeAST(Code, Lang_C);
+  const auto *RD = getRecordDeclFromAST(AST->getASTContext(), "test_struct");
+  randomizeStructureLayout(AST->getASTContext(), RD);
+  const std::vector<std::string> Before = {"a", "b", "c", "d", "e", "f"};
+  const std::vector<std::string> After = getFieldNamesFromRecord(RD);
 
-    // FIXME: Could this be a brittle test? Planning on having a separate unit
-    // test for reproducible randomizations with seed.
-    ASSERT_NE(before, after);
+  // FIXME: Could this be a brittle test? Planning on having a separate unit
+  // test for reproducible randomizations with seed.
+  ASSERT_NE(Before, After);
 }
 
-TEST(RANDSTRUCT_TEST, StructuresMarkedWithNoRandomizeLayoutShouldBeRejectedAndUnchanged)
-{
-    std::string Code =
-        R"(
+TEST(RANDSTRUCT_TEST,
+     StructuresMarkedWithNoRandomizeLayoutShouldBeRejectedAndUnchanged) {
+  std::string Code =
+      R"(
         struct test_struct {
             int a;
             int b;
@@ -192,31 +186,35 @@ TEST(RANDSTRUCT_TEST, StructuresMarkedWithNoRandomizeLayoutShouldBeRejectedAndUn
         } __attribute__((no_randomize_layout));
         )";
 
-    auto AST = MakeAST(Code, Lang_C);
-    auto RD = GetRecordDeclFromAST(AST->getASTContext(), "test_struct");
+  const auto AST = makeAST(Code, Lang_C);
+  const auto *RD = getRecordDeclFromAST(AST->getASTContext(), "test_struct");
 
-    ASSERT_FALSE(randstruct::ShouldRandomize(AST->getASTContext(), RD));
+  ASSERT_FALSE(randstruct::shouldRandomize(AST->getASTContext(), RD));
 
-    std::vector<std::string> expected = {"a", "b", "c", "d", "e", "f"};
-    std::vector<std::string> actual = GetFieldNamesFromRecord(RD);
-    // FIXME: Is it messy to call getASTRecordLayout? Thinking that ShouldRandomize() and
-    // RandomizeStructureLayout() are the functions under test but this tests proper decision
-    // making on ShouldRandomize()'s part and also verifies Randstruct doesn't do anything to it.
-    static_cast<void>(AST->getASTContext().getASTRecordLayout(RD));
-    ASSERT_EQ(expected, actual);
+  const std::vector<std::string> Expected = {"a", "b", "c", "d", "e", "f"};
+  const std::vector<std::string> Actual = getFieldNamesFromRecord(RD);
+  // FIXME: Is it messy to call getASTRecordLayout? Thinking that
+  // shouldRandomize() and RandomizeStructureLayout() are the functions under
+  // test but this tests proper decision making on shouldRandomize()'s part and
+  // also verifies Randstruct doesn't do anything to it.
+  static_cast<void>(AST->getASTContext().getASTRecordLayout(RD));
+  ASSERT_EQ(Expected, Actual);
 }
 
-// FIXME: Clang trips an assertion in the DiagnosticsEngine when the warning is emitted
-// while running under the test suite: clang/lib/Frontend/TextDiagnosticPrinter.cpp:150:
-// virtual void clang::TextDiagnosticPrinter::HandleDiagnostic(clang::DiagnosticsEngine::Level, const clang::Diagnostic&):
-// Assertion `TextDiag && "Unexpected diagnostic outside source file processing"' failed.
+// FIXME: Clang trips an assertion in the DiagnosticsEngine when the warning is
+// emitted while running under the test suite:
+// clang/lib/Frontend/TextDiagnosticPrinter.cpp:150: virtual void
+// clang::TextDiagnosticPrinter::HandleDiagnostic(clang::DiagnosticsEngine::Level,
+// const clang::Diagnostic&): Assertion `TextDiag && "UnExpected diagnostic
+// outside source file processing"' failed.
 //
-// Although the test *technically* is marked as pass; outside of the test suite this functionality
-// works and no assertion is tripped.
-TEST(RANDSTRUCT_TEST, DISABLED_EmitWarningWhenStructureIsMarkedWithBothRandomizeAndNoRandomizeAttributes)
-{
-    std::string Code =
-        R"(
+// Although the test *technically* is marked as pass; outside of the test suite
+// this functionality works and no assertion is tripped.
+TEST(
+    RANDSTRUCT_TEST,
+    DISABLED_EmitWarningWhenStructureIsMarkedWithBothRandomizeAndNoRandomizeAttributes) {
+  std::string Code =
+      R"(
         struct test_struct {
             int a;
             int b;
@@ -224,21 +222,14 @@ TEST(RANDSTRUCT_TEST, DISABLED_EmitWarningWhenStructureIsMarkedWithBothRandomize
         } __attribute__((no_randomize_layout)) __attribute__((randomize_layout));
         )";
 
-    auto AST = MakeAST(Code, Lang_C);
-    ASSERT_EQ(AST->getASTContext().getDiagnostics().getNumWarnings(), 1UL);
+  const auto AST = makeAST(Code, Lang_C);
+  ASSERT_EQ(AST->getASTContext().getDiagnostics().getNumWarnings(), 1UL);
 }
 
-// FIXME: Clang trips an assertion in the DiagnosticsEngine when the warning is emitted
-// while running under the test suite: clang/lib/Frontend/TextDiagnosticPrinter.cpp:150:
-// virtual void clang::TextDiagnosticPrinter::HandleDiagnostic(clang::DiagnosticsEngine::Level, const clang::Diagnostic&):
-// Assertion `TextDiag && "Unexpected diagnostic outside source file processing"' failed.
-//
-// Although the test *technically* is marked as pass; outside of the test suite this functionality
-// works and no assertion is tripped.
-TEST(RANDSTRUCT_TEST, DISABLED_StructureMarkedWithBothAttributesRemainsUnchanged)
-{
-    std::string Code =
-        R"(
+TEST(RANDSTRUCT_TEST,
+     DISABLED_StructureMarkedWithBothAttributesRemainsUnchanged) {
+  std::string Code =
+      R"(
         struct test_struct {
             int a;
             int b;
@@ -246,19 +237,20 @@ TEST(RANDSTRUCT_TEST, DISABLED_StructureMarkedWithBothAttributesRemainsUnchanged
         } __attribute__((no_randomize_layout)) __attribute__((randomize_layout));
         )";
 
-    auto AST = MakeAST(Code, Lang_C);
-    auto RD = GetRecordDeclFromAST(AST->getASTContext(), "test_struct");
-    static_cast<void>(AST->getASTContext().getASTRecordLayout(RD));
+  const auto AST = makeAST(Code, Lang_C);
+  const auto *RD = getRecordDeclFromAST(AST->getASTContext(), "test_struct");
+  static_cast<void>(AST->getASTContext().getASTRecordLayout(RD));
 
-    std::vector<std::string> expected = {"a", "b", "c"};
-    std::vector<std::string> actual = GetFieldNamesFromRecord(RD);
-    ASSERT_EQ(expected, actual);
+  const std::vector<std::string> Expected = {"a", "b", "c"};
+  const std::vector<std::string> Actual = getFieldNamesFromRecord(RD);
+  ASSERT_EQ(Expected, Actual);
 }
 
-TEST(RANDSTRUCT_TEST, AdjacentBitfieldsRemainAdjacentAfterRandomization)
-{
-    std::string Code =
-        R"(
+// End of FIXME regarding DiagnosticsEngine assertion tests.
+
+TEST(RANDSTRUCT_TEST, AdjacentBitfieldsRemainAdjacentAfterRandomization) {
+  std::string Code =
+      R"(
         struct test_struct {
             int a;
             int b;
@@ -269,19 +261,18 @@ TEST(RANDSTRUCT_TEST, AdjacentBitfieldsRemainAdjacentAfterRandomization)
         } __attribute__((randomize_layout));
         )";
 
-    auto AST = MakeAST(Code, Lang_C);
-    auto RD = GetRecordDeclFromAST(AST->getASTContext(), "test_struct");
-    static_cast<void>(AST->getASTContext().getASTRecordLayout(RD));
+  const auto AST = makeAST(Code, Lang_C);
+  const auto *RD = getRecordDeclFromAST(AST->getASTContext(), "test_struct");
+  static_cast<void>(AST->getASTContext().getASTRecordLayout(RD));
 
-    std::vector<std::string> actual = GetFieldNamesFromRecord(RD);
-    std::vector<std::string> subseq = {"x", "y", "z"};
-    ASSERT_TRUE(IsSubsequence(actual, subseq));
+  const std::vector<std::string> Actual = getFieldNamesFromRecord(RD);
+  const std::vector<std::string> Subseq = {"x", "y", "z"};
+  ASSERT_TRUE(isSubsequence(Actual, Subseq));
 }
 
-TEST(RANDSTRUCT_TEST, VariableLengthArrayMemberRemainsAtEndOfStructure)
-{
-    std::string Code =
-        R"(
+TEST(RANDSTRUCT_TEST, VariableLengthArrayMemberRemainsAtEndOfStructure) {
+  std::string Code =
+      R"(
         struct test_struct {
             int a;
             double b;
@@ -290,19 +281,18 @@ TEST(RANDSTRUCT_TEST, VariableLengthArrayMemberRemainsAtEndOfStructure)
         };
         )";
 
-    auto AST = MakeAST(Code, Lang_C);
-    auto RD = GetRecordDeclFromAST(AST->getASTContext(), "test_struct");
-    RandomizeStructureLayout(AST->getASTContext(), RD);
+  const auto AST = makeAST(Code, Lang_C);
+  const auto *RD = getRecordDeclFromAST(AST->getASTContext(), "test_struct");
+  randomizeStructureLayout(AST->getASTContext(), RD);
 
-    std::vector<std::string> fields = GetFieldNamesFromRecord(RD);
-    auto vla = std::find(fields.begin(), fields.end(), "name");
-    ASSERT_TRUE(vla + 1 == fields.end());
+  std::vector<std::string> Fields = getFieldNamesFromRecord(RD);
+  const auto VLA = std::find(Fields.begin(), Fields.end(), "name");
+  ASSERT_TRUE(VLA + 1 == Fields.end());
 }
 
-TEST(RANDSTRUCT_TEST, RandstructDoesNotOverrideThePackedAttr)
-{
-    std::string Code =
-        R"(
+TEST(RANDSTRUCT_TEST, RandstructDoesNotOverrideThePackedAttr) {
+  std::string Code =
+      R"(
         struct test_struct {
             char a;
             short b;
@@ -320,42 +310,42 @@ TEST(RANDSTRUCT_TEST, RandstructDoesNotOverrideThePackedAttr)
         } __attribute__((packed, randomize_layout));
         )";
 
-    auto AST = MakeAST(Code, Lang_C);
-    auto RD = GetRecordDeclFromAST(AST->getASTContext(), "test_struct");
-    auto& layout = AST->getASTContext().getASTRecordLayout(RD);
+  const auto AST = makeAST(Code, Lang_C);
+  const auto *RD = getRecordDeclFromAST(AST->getASTContext(), "test_struct");
+  const auto &Layout = AST->getASTContext().getASTRecordLayout(RD);
 
-    ASSERT_EQ(7, layout.getSize().getQuantity());
+  ASSERT_EQ(7, Layout.getSize().getQuantity());
 
-    auto RD1 = GetRecordDeclFromAST(AST->getASTContext(), "another_struct");
-    auto& layout1 = AST->getASTContext().getASTRecordLayout(RD1);
+  const auto *RD1 = getRecordDeclFromAST(AST->getASTContext(), "another_struct");
+  const auto &Layout1 = AST->getASTContext().getASTRecordLayout(RD1);
 
-    ASSERT_EQ(5, layout1.getSize().getQuantity());
+  ASSERT_EQ(5, Layout1.getSize().getQuantity());
 
-    auto RD2 = GetRecordDeclFromAST(AST->getASTContext(), "last_struct");
-    auto& layout2 = AST->getASTContext().getASTRecordLayout(RD2);
+  const auto *RD2 = getRecordDeclFromAST(AST->getASTContext(), "last_struct");
+  const auto &Layout2 = AST->getASTContext().getASTRecordLayout(RD2);
 
-    ASSERT_EQ(9, layout2.getSize().getQuantity());
+  ASSERT_EQ(9, Layout2.getSize().getQuantity());
 }
 
-TEST(RANDSTRUCT_TEST, ZeroWidthBitfieldsSeparateAllocationUnits)
-{
-    std::string Code =
-        R"(
+TEST(RANDSTRUCT_TEST, ZeroWidthBitfieldsSeparateAllocationUnits) {
+  std::string Code =
+      R"(
         struct test_struct {
             int a : 1;
             int   : 0;
             int b : 1;
         };
         )";
-    auto AST = MakeAST(Code, Lang_C);
-    auto RD = GetRecordDeclFromAST(AST->getASTContext(), "test_struct");
-    std::vector<std::string> actual = GetFieldNamesFromRecord(RD);
-    ASSERT_TRUE(IsSubsequence(actual, {"a", "", "b"}));
 
-    RandomizeStructureLayout(AST->getASTContext(), RD);
-    actual = GetFieldNamesFromRecord(RD);
-    ASSERT_FALSE(IsSubsequence(actual, {"a", "", "b"}));
+  const auto AST = makeAST(Code, Lang_C);
+  const auto *RD = getRecordDeclFromAST(AST->getASTContext(), "test_struct");
+  const std::vector<std::string> Before = getFieldNamesFromRecord(RD);
+  ASSERT_TRUE(isSubsequence(Before, {"a", "", "b"}));
+
+  randomizeStructureLayout(AST->getASTContext(), RD);
+  const std::vector<std::string> After= getFieldNamesFromRecord(RD);
+  ASSERT_FALSE(isSubsequence(After, {"a", "", "b"}));
 }
 
-} // ast_matchers
-} // clang
+} // namespace ast_matchers
+} // namespace clang
