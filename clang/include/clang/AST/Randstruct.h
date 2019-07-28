@@ -14,13 +14,15 @@
 #ifndef CLANG_INCLUDE_AST_RANDSTRUCT_H_
 #define CLANG_INCLUDE_AST_RANDSTRUCT_H_
 
-#include "Decl.h"
-
 namespace clang {
+
+class ASTContext;
+class RecordDecl;
+
 namespace randstruct {
 
-bool ShouldRandomize(const ASTContext& C, const RecordDecl* RD);
-void RandomizeStructureLayout(const ASTContext& C, const RecordDecl* RD);
+bool shouldRandomize(const ASTContext &Context, const RecordDecl *RD);
+void randomizeStructureLayout(const ASTContext &Context, const RecordDecl *RD);
 
 } // namespace randstruct
 } // namespace clang
