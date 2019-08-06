@@ -10104,4 +10104,7 @@ def err_bit_cast_non_trivially_copyable : Error<
   "__builtin_bit_cast %select{source|destination}0 type must be trivially copyable">;
 def err_bit_cast_type_size_mismatch : Error<
   "__builtin_bit_cast source size does not equal destination size (%0 vs %1)">;
+
+def cast_from_randomized_struct: Error<
+  "pointer to struct declared with 'randomize_layout' is being cast" "">;
 } // end of sema component.

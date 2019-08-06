@@ -19,6 +19,7 @@
 #include "clang/AST/ExprCXX.h"
 #include "clang/AST/ExprObjC.h"
 #include "clang/AST/ParentMap.h"
+#include "clang/AST/Randstruct.h"
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/AST/StmtCXX.h"
 #include "clang/AST/StmtObjC.h"
@@ -1968,6 +1969,65 @@ public:
 } // namespace clang
 
 //===----------------------------------------------------------------------===//
+// Checking for bad casts from randomize structs
+//===----------------------------------------------------------------------===//
+namespace clang {
+namespace randstruct {
+namespace casts {
+
+class BadCastsASTWalk: public RecursiveASTVisitor<BadCastsASTWalk> {
+  Sema &S;
+public:
+  BadCastsASTWalk(Sema &S) : S(S) {};
+
+  bool VisitCastExpr(const CastExpr *E) {
+    switch (E->getCastKind()) {
+    case CK_BitCast: {
+      const Expr *SubExpr = E->getSubExpr();
+      auto ICE = dyn_cast<ImplicitCastExpr>(SubExpr);
+      if (ICE != nullptr) {
+	CanQualType E_T = S.Context.getCanonicalType(E->getType());
+	CanQualType ICE_T = S.Context.getCanonicalType(ICE->getType());
+	if (isa<PointerType>(E_T) && isa<PointerType>(ICE_T)) {
+	  auto E_SP = ((QualType)E_T)->getPointeeType();
+	  auto ICE_PT = ((QualType)ICE_T)->getPointeeType();
+
+	  auto E_R = E_SP->getAsRecordDecl();
+	  auto ICE_R = ICE_PT->getAsRecordDecl();
+
+	  if (E_R != nullptr && ICE_R != nullptr && E_R != ICE_R) {
+	    for (auto d : ICE_R->decls()) {
+	      auto f = dyn_cast<FieldDecl>(d);
+	      if (f != nullptr && f->getOriginalFieldIndex() != 0) {
+		// The struct we are casting the pointer from was randomized.
+		S.Context.getDiagnostics().Report(
+		    E->getExprLoc(), diag::cast_from_randomized_struct);
+	        break;
+	      }
+	    }
+	  }
+	}
+      }
+      break;
+    }
+    default:
+      break;
+    }
+
+    return true;
+  }
+};
+
+void checkForBadCasts(Sema &S, AnalysisDeclContext &AC)
+{
+  BadCastsASTWalk walker(S);
+  walker.TraverseStmt(AC.getBody());
+}
+}
+}
+}
+
+//===----------------------------------------------------------------------===//
 // AnalysisBasedWarnings - Worker object used by Sema to execute analysis-based
 //  warnings on a function, method, or block.
 //===----------------------------------------------------------------------===//
@@ -2253,6 +2313,8 @@ AnalysisBasedWarnings::IssueWarnings(sema::AnalysisBasedWarnings::Policy P,
       ++NumFunctionsWithBadCFGs;
     }
   }
+
+  clang::randstruct::casts::checkForBadCasts(S, AC);
 }
 
 void clang::sema::AnalysisBasedWarnings::PrintStats() const {
