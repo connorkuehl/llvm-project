@@ -4063,6 +4063,15 @@ unsigned FieldDecl::getFieldIndex() const {
   return CachedFieldIndex - 1;
 }
 
+unsigned FieldDecl::getOriginalFieldIndex() const {
+  return OriginalFieldIndex;
+}
+
+void FieldDecl::setOriginalFieldIndex(unsigned index) {
+  assert(index >= 1);
+  OriginalFieldIndex = index;
+}
+
 SourceRange FieldDecl::getSourceRange() const {
   const Expr *FinalExpr = getInClassInitializer();
   if (!FinalExpr)

@@ -2695,6 +2695,7 @@ class FieldDecl : public DeclaratorDecl, public Mergeable<FieldDecl> {
   unsigned BitField : 1;
   unsigned Mutable : 1;
   mutable unsigned CachedFieldIndex : 30;
+  mutable unsigned OriginalFieldIndex : 30;
 
   /// The kinds of value we can store in InitializerOrBitWidth.
   ///
@@ -2744,6 +2745,7 @@ protected:
             InClassInitStyle InitStyle)
     : DeclaratorDecl(DK, DC, IdLoc, Id, T, TInfo, StartLoc),
       BitField(false), Mutable(Mutable), CachedFieldIndex(0),
+      OriginalFieldIndex(0),
       InitStorage(nullptr, (InitStorageKind) InitStyle) {
     if (BW)
       setBitWidth(BW);
@@ -2764,6 +2766,13 @@ public:
   /// Returns the index of this field within its record,
   /// as appropriate for passing to ASTRecordLayout::getFieldOffset.
   unsigned getFieldIndex() const;
+
+  /// For struct field reorg, this is the original index, 1-based, or
+  /// 0 if reorg did not happen.
+  unsigned getOriginalFieldIndex() const;
+
+  /// For struct field reorg, sets a 1-based index.
+  void setOriginalFieldIndex(unsigned index);
 
   /// Determines whether this field is mutable (C++ only).
   bool isMutable() const { return Mutable; }

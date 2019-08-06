@@ -210,12 +210,16 @@ void randomizeStructureLayout(const ASTContext &Context, const RecordDecl *RD) {
   SmallVector<Decl *, SMALL_VEC_SIZE> Others;
   SmallVector<FieldDecl *, SMALL_VEC_SIZE> Fields;
   FieldDecl *VLA = nullptr;
+  auto index = 1u;
 
   std::set<Decl *> MutateGuard;
   for (auto *Decl : RD->decls()) {
     MutateGuard.insert(Decl);
     if (isa<FieldDecl>(Decl)) {
       auto *Field = cast<FieldDecl>(Decl);
+      Field->setOriginalFieldIndex(index);
+      ++index;
+
       if (Field->getType()->isIncompleteArrayType()) {
         VLA = Field;
       } else {

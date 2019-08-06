@@ -10258,4 +10258,6 @@ def warn_sycl_kernel_return_type : Warning<
   "function template with 'sycl_kernel' attribute must have a 'void' return type">,
   InGroup<IgnoredAttributes>;
 
+def cast_from_randomized_struct: Error<
+  "pointer to struct declared with 'randomize_layout' is being cast" "">;
 } // end of sema component.
