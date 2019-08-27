@@ -220,7 +220,9 @@ void randomizeStructureLayout(const ASTContext &Context, const RecordDecl *RD) {
       Field->setOriginalFieldIndex(index);
       ++index;
 
-      if (Field->getType()->isIncompleteArrayType()) {
+      auto Type = Field->getType();
+      auto *ZSA = dyn_cast<ConstantArrayType>(Type);
+      if ((ZSA && ZSA->getSize() == 0) || Type->isIncompleteArrayType()) {
         VLA = Field;
       } else {
         Fields.push_back(Field);
