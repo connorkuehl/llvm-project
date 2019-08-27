@@ -219,14 +219,20 @@ void randomizeStructureLayout(const ASTContext &Context, const RecordDecl *RD) {
       auto *Field = cast<FieldDecl>(Decl);
       Field->setOriginalFieldIndex(index);
       ++index;
-
-      if (Field->getType()->isIncompleteArrayType()) {
-        VLA = Field;
-      } else {
-        Fields.push_back(Field);
-      }
+      Fields.push_back(Field);
     } else {
       Others.push_back(Decl);
+    }
+  }
+
+  if (Fields.size() > 0) {
+    /* Struct might end with a variable-length array or an array of size 0 or 1: */
+    auto MaybeVLA = Fields.back();
+    auto Type = MaybeVLA->getType();
+    auto *CA = dyn_cast<ConstantArrayType>(Type);
+    if ((CA && CA->getSize().sle(2)) || Type->isIncompleteArrayType()
+		    || RD->hasFlexibleArrayMember()) {
+      VLA = Fields.pop_back_val();
     }
   }
 
