@@ -181,6 +181,10 @@ void Randstruct::commit(const RecordDecl *RD,
 namespace randstruct {
 
 bool shouldRandomize(const ASTContext &Context, const RecordDecl *RD) {
+  if (RD->isUnion()) {
+      return false;
+  }
+
   const auto HasRandAttr = RD->getAttr<RandomizeLayoutAttr>() != nullptr;
   const auto HasNoRandAttr = RD->getAttr<NoRandomizeLayoutAttr>() != nullptr;
   if (HasRandAttr && HasNoRandAttr) {
