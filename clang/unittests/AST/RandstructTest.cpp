@@ -190,15 +190,6 @@ TEST(RANDSTRUCT_TEST,
   const auto *RD = getRecordDeclFromAST(AST->getASTContext(), "test_struct");
 
   ASSERT_FALSE(randstruct::shouldRandomize(AST->getASTContext(), RD));
-
-  const std::vector<std::string> Expected = {"a", "b", "c", "d", "e", "f"};
-  const std::vector<std::string> Actual = getFieldNamesFromRecord(RD);
-  // FIXME: Is it messy to call getASTRecordLayout? Thinking that
-  // shouldRandomize() and RandomizeStructureLayout() are the functions under
-  // test but this tests proper decision making on shouldRandomize()'s part and
-  // also verifies Randstruct doesn't do anything to it.
-  static_cast<void>(AST->getASTContext().getASTRecordLayout(RD));
-  ASSERT_EQ(Expected, Actual);
 }
 
 // FIXME: Clang trips an assertion in the DiagnosticsEngine when the warning is
