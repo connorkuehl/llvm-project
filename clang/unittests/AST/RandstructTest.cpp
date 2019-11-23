@@ -230,6 +230,10 @@ TEST(RANDSTRUCT_TEST,
 
   const auto AST = makeAST(Code, Lang_C);
   const auto *RD = getRecordDeclFromAST(AST->getASTContext(), "test_struct");
+  // FIXME getASTRecordLayout isn't the function we're testing here, it just
+  // happens to be the place where Randstruct makes a decision and then proceeds
+  // with that decision. I wonder if this is better as an integration test
+  // somehow.
   static_cast<void>(AST->getASTContext().getASTRecordLayout(RD));
 
   const std::vector<std::string> Expected = {"a", "b", "c"};
@@ -303,6 +307,9 @@ TEST(RANDSTRUCT_TEST, RandstructDoesNotOverrideThePackedAttr) {
 
   const auto AST = makeAST(Code, Lang_C);
   const auto *RD = getRecordDeclFromAST(AST->getASTContext(), "test_struct");
+  // FIXME (?): calling getASTRecordLayout is probably a necessary evil so that
+  // Clang's RecordBuilders can actually flesh out the information like
+  // alignment, etc.
   const auto &Layout = AST->getASTContext().getASTRecordLayout(RD);
 
   ASSERT_EQ(7, Layout.getSize().getQuantity());
