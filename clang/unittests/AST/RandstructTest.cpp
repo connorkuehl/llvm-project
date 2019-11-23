@@ -254,7 +254,7 @@ TEST(RANDSTRUCT_TEST, AdjacentBitfieldsRemainAdjacentAfterRandomization) {
 
   const auto AST = makeAST(Code, Lang_C);
   const auto *RD = getRecordDeclFromAST(AST->getASTContext(), "test_struct");
-  static_cast<void>(AST->getASTContext().getASTRecordLayout(RD));
+  randomizeStructureLayout(AST->getASTContext(), RD);
 
   const std::vector<std::string> Actual = getFieldNamesFromRecord(RD);
   const std::vector<std::string> Subseq = {"x", "y", "z"};
