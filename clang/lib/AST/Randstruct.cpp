@@ -101,7 +101,7 @@ void Randstruct::randomize(const ASTContext &Context,
       // Start a bitfield run if this is the first bitfield
       // we have found.
       if (!CurrentBitfieldRun) {
-        CurrentBitfieldRun = llvm::make_unique<BitfieldRun>();
+        CurrentBitfieldRun = std::make_unique<BitfieldRun>();
       }
 
       // We've placed the field, and can remove it from the
@@ -116,7 +116,7 @@ void Randstruct::randomize(const ASTContext &Context,
       }
       // If we don't have a bucket, make one.
       if (!CurrentBucket) {
-        CurrentBucket = llvm::make_unique<Bucket>();
+        CurrentBucket = std::make_unique<Bucket>();
       }
 
       auto Width = Context.getTypeInfo(F->getType()).Width;
