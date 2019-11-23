@@ -356,7 +356,7 @@ TEST(RANDSTRUCT_TEST, RandstructDoesNotRandomizeUnionFieldOrder) {
             int e;
             int f;
             int g;
-        } __attribute((randomize_layout));
+        } __attribute__((randomize_layout));
         )";
 
   const auto AST = makeAST(Code, Lang_C);
