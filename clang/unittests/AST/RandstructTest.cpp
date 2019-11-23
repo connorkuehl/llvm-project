@@ -347,5 +347,24 @@ TEST(RANDSTRUCT_TEST, ZeroWidthBitfieldsSeparateAllocationUnits) {
   ASSERT_FALSE(isSubsequence(After, {"a", "", "b"}));
 }
 
+TEST(RANDSTRUCT_TEST, RandstructDoesNotRandomizeUnionFieldOrder) {
+  std::string Code =
+      R"(
+        union test_union {
+            int a;
+            int b;
+            int c;
+            int d;
+            int e;
+            int f;
+            int g;
+        } __attribute((randomize_layout));
+        )";
+
+  const auto AST = makeAST(Code, Lang_C);
+  const auto *RD = getRecordDeclFromAST(AST->getASTContext(), "test_union");
+  ASSERT_FALSE(shouldRandomize(AST->getASTContext(), RD));
+}
+
 } // namespace ast_matchers
 } // namespace clang
