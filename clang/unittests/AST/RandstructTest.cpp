@@ -364,5 +364,37 @@ TEST(RANDSTRUCT_TEST, RandstructDoesNotRandomizeUnionFieldOrder) {
   ASSERT_FALSE(shouldRandomize(AST->getASTContext(), RD));
 }
 
+TEST(RANDSTRUCT_TEST, AnonymousStructsAndUnionsRetainFieldOrder) {
+  std::string Code =
+      R"(
+        struct test_struct {
+            int a;
+            struct {
+                int b;
+                int c;
+                int d;
+            };
+            int e;
+            union {
+                int f;
+                int h;
+                int j;
+            };
+            int k;
+        } __attribute__((randomize_layout));
+        )";
+  const auto AST = makeAST(Code, Lang_C);
+  const auto *RD = getRecordDeclFromAST(AST->getASTContext(), "test_struct");
+
+  randomizeStructureLayout(AST->getASTContext(), RD);
+  for (auto f : RD->fields()) {
+    if (auto *SubRD = dyn_cast<RecordDecl>(f))
+      if (SubRD->isAnonymousStructOrUnion()) {
+        ASSERT_TRUE(isSubsequence(getFieldNamesFromRecord(RD), {"b", "c", "d"})
+                || isSubsequence(getFieldNamesFromRecord(RD), {"f", "h", "j"}));
+    }
+  }
+}
+
 } // namespace ast_matchers
 } // namespace clang
