@@ -387,13 +387,22 @@ TEST(RANDSTRUCT_TEST, AnonymousStructsAndUnionsRetainFieldOrder) {
   const auto *RD = getRecordDeclFromAST(AST->getASTContext(), "test_struct");
 
   randomizeStructureLayout(AST->getASTContext(), RD);
-  for (auto f : RD->fields()) {
+
+  bool AnonStructTested = false;
+  bool AnonUnionTested = false;
+  for (auto f : RD->decls()) {
     if (auto *SubRD = dyn_cast<RecordDecl>(f))
       if (SubRD->isAnonymousStructOrUnion()) {
-        ASSERT_TRUE(isSubsequence(getFieldNamesFromRecord(RD), {"b", "c", "d"})
-                || isSubsequence(getFieldNamesFromRecord(RD), {"f", "h", "j"}));
-    }
+        if (isSubsequence(getFieldNamesFromRecord(SubRD), {"b", "c", "d"})) {
+          AnonStructTested = true;
+        }
+        if (isSubsequence(getFieldNamesFromRecord(SubRD), {"f", "h", "j"})) {
+          AnonUnionTested = true;
+        }
+      }
   }
+  ASSERT_TRUE(AnonStructTested);
+  ASSERT_TRUE(AnonUnionTested);
 }
 
 } // namespace ast_matchers
