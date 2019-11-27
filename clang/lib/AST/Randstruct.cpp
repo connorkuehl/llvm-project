@@ -27,6 +27,8 @@ namespace clang {
 
 namespace randstruct {
 
+std::string SEED;
+
 // FIXME: Replace this with some discovery once that mechanism exists.
 const auto CACHE_LINE = 64;
 
@@ -61,13 +63,15 @@ void Bucket::addField(FieldDecl *Field, int FieldSize) {
 class Randstruct {
 public:
   void randomize(const ASTContext &Context,
-                 SmallVectorImpl<FieldDecl *> &OutFields) const;
+                 SmallVectorImpl<FieldDecl *> &OutFields,
+                 std::mt19937 &Rng) const;
   void commit(const RecordDecl *RD,
               SmallVectorImpl<Decl *> &NewDeclOrder) const;
 };
 
 void Randstruct::randomize(const ASTContext &Context,
-                           SmallVectorImpl<FieldDecl *> &FieldsOut) const {
+                           SmallVectorImpl<FieldDecl *> &FieldsOut,
+                           std::mt19937 &Rng) const {
   // FIXME: Replace std::vector with LLVM ADT
   using namespace randstruct;
   // All of the Buckets produced by best-effort cache-line algorithm.
@@ -159,15 +163,14 @@ void Randstruct::randomize(const ASTContext &Context,
     Buckets.push_back(std::move(CurrentBitfieldRun));
   }
 
-  std::mt19937 RNG;
-  std::shuffle(std::begin(Buckets), std::end(Buckets), RNG);
+  std::shuffle(std::begin(Buckets), std::end(Buckets), Rng);
 
   // Produce the new ordering of the elements from our Buckets.
   SmallVector<FieldDecl *, 16> FinalOrder;
   for (auto &Bucket : Buckets) {
     auto &Randomized = Bucket->fields();
     if (!Bucket->isBitfieldRun()) {
-      std::shuffle(std::begin(Randomized), std::end(Randomized), RNG);
+      std::shuffle(std::begin(Randomized), std::end(Randomized), Rng);
     }
     FinalOrder.insert(FinalOrder.end(), Randomized.begin(), Randomized.end());
   }
@@ -222,8 +225,10 @@ void randomizeStructureLayout(const ASTContext &Context, const RecordDecl *RD) {
     }
   }
 
+  std::seed_seq seed(SEED.begin(), SEED.end());
+  std::mt19937 Rng(seed);
   Randstruct Rand;
-  Rand.randomize(Context, Fields);
+  Rand.randomize(Context, Fields, Rng);
 
   SmallVector<Decl *, SMALL_VEC_SIZE> NewOrder = Others;
   NewOrder.insert(NewOrder.end(), Fields.begin(), Fields.end());
