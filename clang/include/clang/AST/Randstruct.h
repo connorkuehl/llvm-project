@@ -14,12 +14,16 @@
 #ifndef CLANG_INCLUDE_AST_RANDSTRUCT_H_
 #define CLANG_INCLUDE_AST_RANDSTRUCT_H_
 
+#include <string>
+
 namespace clang {
 
 class ASTContext;
 class RecordDecl;
 
 namespace randstruct {
+
+extern std::string SEED;
 
 bool shouldRandomize(const ASTContext &Context, const RecordDecl *RD);
 void randomizeStructureLayout(const ASTContext &Context, const RecordDecl *RD);
