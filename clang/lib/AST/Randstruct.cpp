@@ -207,7 +207,9 @@ void randomizeStructureLayout(const ASTContext &Context, const RecordDecl *RD) {
   SmallVector<FieldDecl *, SMALL_VEC_SIZE> Fields;
   FieldDecl *VLA = nullptr;
 
+  std::set<Decl *> MutateGuard;
   for (auto *Decl : RD->decls()) {
+    MutateGuard.insert(Decl);
     if (isa<FieldDecl>(Decl)) {
       auto *Field = cast<FieldDecl>(Decl);
       if (Field->getType()->isIncompleteArrayType()) {
@@ -229,6 +231,8 @@ void randomizeStructureLayout(const ASTContext &Context, const RecordDecl *RD) {
     NewOrder.push_back(VLA);
   }
 
+  assert(MutateGuard.size() == NewOrder.size() &&
+          "Decl count has been altered after Randstruct randomization!");
   Rand.commit(RD, NewOrder);
 }
 
