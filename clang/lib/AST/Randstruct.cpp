@@ -35,11 +35,10 @@ public:
   std::vector<FieldDecl *> &fields() { return Fields; }
   void addField(FieldDecl *Field, int FieldSize);
   virtual bool canFit(int FieldSize) const {
-    return empty() || Size + FieldSize <= CACHE_LINE;
+    return Size + FieldSize <= CACHE_LINE;
   }
   virtual bool isBitfieldRun() const { return false; }
-  bool full() const { return !empty(); }
-  bool empty() const { return Fields.size(); }
+  bool full() const { return Size >= CACHE_LINE; }
 
 private:
   std::vector<FieldDecl *> Fields;
