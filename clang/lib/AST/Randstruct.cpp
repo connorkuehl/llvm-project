@@ -119,6 +119,13 @@ void Randstruct::randomize(const ASTContext &Context,
       }
 
       auto Width = Context.getTypeInfo(F->getType()).Width;
+      if (Width >= CACHE_LINE) {
+          std::unique_ptr<Bucket> OverSized = std::make_unique<Bucket>();
+          OverSized->addField(F, Width);
+          FieldsOut.erase(Field);
+          Buckets.push_back(std::move(OverSized));
+          continue;
+      }
 
       // If we can fit, add it.
       if (CurrentBucket->canFit(Width)) {
