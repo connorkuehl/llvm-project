@@ -253,7 +253,8 @@ void randomizeStructureLayout(const ASTContext &Context, const RecordDecl *RD) {
   assert(MutateGuard.size() == NewOrder.size() &&
           "Decl count has been altered after Randstruct randomization!");
   Rand.commit(RD, NewOrder);
-  RD->setIsRandomized(true);
+  // FIXME: Oof, const_cast
+  const_cast<RecordDecl*>(RD)->setIsRandomized(true);
 }
 
 } // namespace randstruct
