@@ -1996,14 +1996,11 @@ public:
 	  auto ICE_R = ICE_PT->getAsRecordDecl();
 
 	  if (E_R != nullptr && ICE_R != nullptr && E_R != ICE_R) {
-	    for (auto d : ICE_R->decls()) {
-	      auto f = dyn_cast<FieldDecl>(d);
-	      if (f != nullptr && f->getOriginalFieldIndex() != 0) {
-		// The struct we are casting the pointer from was randomized.
-		S.Context.getDiagnostics().Report(
-		    E->getExprLoc(), diag::cast_from_randomized_struct);
-	        break;
-	      }
+	    if (ICE_R->isRandomized()) {
+	      // The struct we are casting the pointer from was randomized.
+	      S.Context.getDiagnostics().Report(E->getExprLoc(),
+			      diag::cast_from_randomized_struct);
+	      break;
 	    }
 	  }
 	}
