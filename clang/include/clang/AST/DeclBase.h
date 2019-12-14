@@ -1454,10 +1454,13 @@ class DeclContext {
 
     /// Represents the way this type is passed to a function.
     uint64_t ArgPassingRestrictions : 2;
+
+    /// Indicates whether this struct has had its field layout randomized.
+    uint64_t IsRandomized : 1;
   };
 
   /// Number of non-inherited bits in RecordDeclBitfields.
-  enum { NumRecordDeclBits = 14 };
+  enum { NumRecordDeclBits = 15 };
 
   /// Stores the bits used by OMPDeclareReductionDecl.
   /// If modified NumOMPDeclareReductionDeclBits and the accessor
