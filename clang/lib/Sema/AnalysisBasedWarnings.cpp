@@ -2311,6 +2311,7 @@ AnalysisBasedWarnings::IssueWarnings(sema::AnalysisBasedWarnings::Policy P,
     }
   }
 
+  // FIXME: Any way to get a handle to a RecordDecl struct here?
   clang::randstruct::casts::checkForBadCasts(S, AC);
 }
 
