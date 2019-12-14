@@ -3855,6 +3855,14 @@ public:
     RecordDeclBits.ParamDestroyedInCallee = V;
   }
 
+  bool isRandomized() const {
+    return RecordDeclBits.IsRandomized;
+  }
+
+  void setIsRandomized(bool V) {
+    RecordDeclBits.IsRandomized = V;
+  }
+
   /// Determines whether this declaration represents the
   /// injected class name.
   ///
